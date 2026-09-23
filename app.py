@@ -21,7 +21,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for rich aesthetics and modern typography
+# Custom CSS for rich aesthetics and Google Maps style integration
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -41,23 +41,6 @@ st.markdown("""
         font-size: 1.1rem;
         margin-bottom: 1.5rem;
     }
-    .metric-card {
-        background-color: #f8f9fa;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e9ecef;
-        text-align: center;
-    }
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2a5298;
-    }
-    .metric-label {
-        font-size: 0.9rem;
-        color: #6c757d;
-    }
     .stButton>button {
         background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
         color: white;
@@ -69,11 +52,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Main Header & Banner (Poster Step 1, 2, 16)
+# Main Header & Banner
 st.markdown('<div class="main-title">🌤️ 臺灣天氣預報儀表板 (Taiwan Weather Forecast)</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">AIoT L3 CWA Open Data 專案 | 中央氣象署 Weather Data Integration & Visualization</div>', unsafe_allow_html=True)
 
-# Sidebar (Poster Step 13, 18)
+# Sidebar
 st.sidebar.image("https://opendata.cwa.gov.tw/assets/img/logo.png", width=180)
 st.sidebar.title("🎛️ 預報控制台")
 
@@ -108,7 +91,7 @@ available_regions = ["全部地區"] + list(REGION_MAPPING.keys())
 selected_region = st.sidebar.selectbox(
     "📍 選擇地區 (Select Region):",
     options=available_regions,
-    index=2  # Default to 中部地區 as shown in poster step 10 & 13
+    index=2  # Default to 中部地區
 )
 
 # City Filter within selected region
@@ -119,17 +102,23 @@ else:
 
 selected_city = st.sidebar.selectbox("🏙️ 選擇縣市 (Select City):", options=available_cities)
 
-# Date Filter for Map (Poster Step 18)
+# Date Filter for Map
 available_dates = sorted(list(df_city["dataDate"].unique())) if not df_city.empty else []
 selected_date = st.sidebar.selectbox("📅 選擇地圖日期 (Select Date):", options=available_dates, index=0 if available_dates else None)
 
+# Map Style Selector (Google Maps Options)
+map_style = st.sidebar.radio(
+    "🗺️ 地圖樣式 (Map Style):",
+    options=["Google 地圖 (標準)", "Google 衛星混合圖 (Satellite)", "Google 地形圖 (Terrain)"],
+    index=0
+)
+
 # App Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["📊 氣溫折線圖與表格", "🗺️ 台灣天氣地圖", "💡 AI 穿搭與生活建議", "📚 專案架構與重點"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 氣溫折線圖與表格", "🗺️ 台灣天氣地圖 (Google Maps)", "💡 AI 穿搭與生活建議", "📚 專案架構與重點"])
 
 with tab1:
     st.subheader(f"📌 {selected_region} - {selected_city} 氣溫預報 trend")
 
-    # Filter DataFrame for visualization
     if selected_city != "全部縣市":
         df_view = df_city[df_city["cityName"] == selected_city].sort_values("dataDate")
     elif selected_region != "全部地區":
@@ -138,7 +127,6 @@ with tab1:
         df_view = df_regional.sort_values("dataDate")
 
     if not df_view.empty:
-        # Key Metrics Row
         latest_row = df_view.iloc[0]
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -153,7 +141,6 @@ with tab1:
 
         st.divider()
 
-        # 1. Temperature Line Chart (Poster Step 14)
         st.markdown("### 📈 一週最高與最低氣溫 (MaxT vs MinT)")
         fig = go.Figure()
 
@@ -186,7 +173,6 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # 2. Data Table (Poster Step 15)
         st.markdown("### 📋 清楚呈現預報資料表格")
         display_df = df_view[["dataDate", "mint", "maxt", "wx"]].rename(columns={
             "dataDate": "日期 (Date)",
@@ -197,8 +183,8 @@ with tab1:
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 with tab2:
-    st.subheader("🗺️ 台灣地圖氣溫視覺化 (Folium Interactive Weather Map)")
-    st.caption("根據選定日期的最高與最低氣溫，以色塊區分溫度等級：🔵<20°C | 🟢 20-25°C | 🟡 25-30°C | 🔴 >30°C (Poster Step 17 & 18)")
+    st.subheader("🗺️ 台灣天氣地圖 (Google Maps Style)")
+    st.caption("結合 **Google Maps 底圖** 與全台縣市即時預報標籤。標籤顏色代表平均溫度：🔵<20°C | 🟢 20-25°C | 🟡 25-30°C | 🔴 >30°C")
 
     if selected_date and not df_city.empty:
         df_map = df_city[df_city["dataDate"] == selected_date]
@@ -211,42 +197,78 @@ with tab2:
             center_lat, center_lon = 23.8, 120.9
             zoom_level = 7.5
 
-        m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom_level, tiles="CartoDB positron")
+        # Configure Google Maps Tile URLs
+        if map_style == "Google 衛星混合圖 (Satellite)":
+            tile_url = "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+            tile_attr = "Google Maps Satellite"
+        elif map_style == "Google 地形圖 (Terrain)":
+            tile_url = "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}"
+            tile_attr = "Google Maps Terrain"
+        else: # Google Standard Roadmap
+            tile_url = "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+            tile_attr = "Google Maps Roadmap"
+
+        m = folium.Map(
+            location=[center_lat, center_lon],
+            zoom_start=zoom_level,
+            tiles=tile_url,
+            attr=tile_attr
+        )
 
         for _, row in df_map.iterrows():
             avg_temp = (row["maxt"] + row["mint"]) / 2.0
-            # Color logic as defined in poster step 17
+            
+            # Color coding
             if avg_temp < 20:
-                color = "blue"
+                bg_color = "#1E88E5" # Blue
             elif 20 <= avg_temp < 25:
-                color = "green"
+                bg_color = "#43A047" # Green
             elif 25 <= avg_temp < 30:
-                color = "orange"
+                bg_color = "#FB8C00" # Orange
             else:
-                color = "red"
+                bg_color = "#E53935" # Red
 
             popup_html = f"""
-            <div style="font-family: sans-serif; width: 160px;">
-                <h4 style="margin:0 0 5px 0; color:#2a5298;">{row['cityName']}</h4>
+            <div style="font-family: 'Inter', sans-serif; width: 170px; padding: 4px;">
+                <h4 style="margin:0 0 6px 0; color:#1a73e8; border-bottom:1px solid #eee; padding-bottom:4px;">{row['cityName']}</h4>
                 <b>日期:</b> {row['dataDate']}<br>
-                <b>最高溫:</b> <span style="color:red;">{row['maxt']}°C</span><br>
-                <b>最低溫:</b> <span style="color:blue;">{row['mint']}°C</span><br>
+                <b>最高溫:</b> <span style="color:#d93025; font-weight:bold;">{row['maxt']}°C</span><br>
+                <b>最低溫:</b> <span style="color:#1a73e8; font-weight:bold;">{row['mint']}°C</span><br>
                 <b>天氣狀況:</b> {row.get('wx', '多雲')}
             </div>
             """
 
-            folium.CircleMarker(
+            # Google Maps Styled Pill Badge Marker
+            icon_html = f"""
+            <div style="
+                background-color: {bg_color};
+                color: white;
+                padding: 4px 10px;
+                border-radius: 16px;
+                font-size: 12px;
+                font-weight: 700;
+                border: 2px solid white;
+                box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+                white-space: nowrap;
+                text-align: center;
+                font-family: 'Inter', sans-serif;
+            ">
+                📍 {row['cityName']} | {row['mint']}~{row['maxt']}°C
+            </div>
+            """
+
+            folium.Marker(
                 location=[row["latitude"], row["longitude"]],
-                radius=12,
-                popup=folium.Popup(popup_html, max_width=200),
-                tooltip=f"{row['cityName']}: {row['mint']}°C ~ {row['maxt']}°C",
-                color=color,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.7
+                icon=folium.DivIcon(
+                    html=icon_html,
+                    icon_size=(110, 32),
+                    icon_anchor=(55, 16)
+                ),
+                popup=folium.Popup(popup_html, max_width=220),
+                tooltip=f"{row['cityName']}: {row['mint']}°C ~ {row['maxt']}°C ({row.get('wx', '')})"
             ).add_to(m)
 
-        st_folium(m, width="100%", height=500)
+        st_folium(m, width="100%", height=550)
 
 with tab3:
     st.subheader("💡 AI 氣象分析與穿搭生活建議 (Poster Step 22)")
@@ -276,7 +298,7 @@ with tab4:
     | **Step 4 - 6** | API 與 JSON 解析 | 使用 `requests` 抓取 JSON，解析縣市與地區之 `MinT`/`MaxT` |
     | **Step 7 - 10**| SQLite 資料庫設計 | 建立 `data.db`，設計 `TemperatureForecasts` 表並使用 SQL 查詢驗證 |
     | **Step 11 - 16**| Streamlit Web App | 整合互動下拉選單、Plotly 折線圖與自訂 Dataframe 表格 |
-    | **Step 17 - 18**| 台灣地圖視覺化 | 結合 `Folium` 地圖與日期篩選，呈現四色溫度地標 |
+    | **Step 17 - 18**| 台灣地圖視覺化 | 結合 **Google Maps 底圖** 與日期篩選，呈現 Google 風格溫度地標 |
     | **Step 19 - 21**| 程式碼品質與 Git | 模組化架構 (`config`, `fetch_cwa_data`, `db_manager`, `app`) 並託管於 GitHub |
     """)
 
