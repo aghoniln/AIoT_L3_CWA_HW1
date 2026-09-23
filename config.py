@@ -1,12 +1,23 @@
 import os
 
+# Load .env if present
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(env_path):
+    with open(env_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip()
+
 # CWA Open Data API Configuration
 CWA_API_KEY = os.environ.get("CWA_API_KEY", "CWA-009C2096-4019-4163-9C59-587ED1DD7B1E")
-CWA_DATASET_ID = "F-D0047-091"  # 臺灣各縣市未來1週天氣預報
+CWA_DATASET_ID = os.environ.get("CWA_DATASET_ID", "F-D0047-091")  # 臺灣各縣市未來1週天氣預報
 CWA_36H_DATASET_ID = "F-C0032-001"  # 今明36小時天氣預報
 
 # Database Configuration
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
+DATA_DIR_DB_PATH = os.path.join(os.path.dirname(__file__), "data", "data.db")
 
 # Region to County Mapping
 REGION_MAPPING = {
@@ -17,7 +28,6 @@ REGION_MAPPING = {
     "離島地區": ["澎湖縣", "金門縣", "連江縣"]
 }
 
-# Reverse mapping: County -> Region
 COUNTY_TO_REGION = {}
 for region, counties in REGION_MAPPING.items():
     for county in counties:
@@ -49,7 +59,6 @@ CITY_COORDINATES = {
     "連江縣": (26.1505, 119.9499)
 }
 
-# Regional Center Coordinates
 REGION_CENTER_COORDINATES = {
     "北部地區": (25.0000, 121.5000),
     "中部地區": (24.1000, 120.6500),
