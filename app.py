@@ -80,6 +80,18 @@ def load_data():
 
 df_regional, df_city = load_data()
 
+# Check if cached data lacks new columns (pop, uvi) and invalidate cache if needed
+if (not df_city.empty and ("pop" not in df_city.columns or "uvi" not in df_city.columns)) or (not df_regional.empty and ("pop" not in df_regional.columns or "uvi" not in df_regional.columns)):
+    st.cache_data.clear()
+    df_regional, df_city = load_data()
+
+# Ensure defensive column defaults
+for col in ["pop", "uvi"]:
+    if col not in df_regional.columns:
+        df_regional[col] = 0.0
+    if col not in df_city.columns:
+        df_city[col] = 0.0
+
 today_str = datetime.now().strftime("%Y-%m-%d")
 
 # Check if database lacks current data or is empty
@@ -88,6 +100,11 @@ if df_regional.empty or df_city.empty or (not df_city.empty and df_city["dataDat
         fetch_and_store_weather_data()
         st.cache_data.clear()
         df_regional, df_city = load_data()
+        for col in ["pop", "uvi"]:
+            if col not in df_regional.columns:
+                df_regional[col] = 0.0
+            if col not in df_city.columns:
+                df_city[col] = 0.0
 
 if df_regional.empty and df_city.empty:
     st.warning("⚠️ 資料庫中尚無氣象資料。點擊左側「重新向 CWA API 抓取資料」即可初始化！")
@@ -137,6 +154,10 @@ with tab1:
         df_view = df_regional[df_regional["regionName"] == selected_region].sort_values("dataDate")
     else:
         df_view = df_regional.sort_values("dataDate")
+
+    for col in ["pop", "uvi"]:
+        if col not in df_view.columns:
+            df_view[col] = 0.0
 
     if not df_view.empty:
         df_today = df_view[df_view["dataDate"] >= today_str]
