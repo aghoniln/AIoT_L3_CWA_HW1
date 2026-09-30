@@ -45,6 +45,8 @@ def init_db():
             mint REAL NOT NULL,
             maxt REAL NOT NULL,
             wx TEXT,
+            pop REAL DEFAULT 0,
+            uvi REAL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(regionName, dataDate) ON CONFLICT REPLACE
         );
@@ -61,10 +63,23 @@ def init_db():
             wx TEXT,
             latitude REAL,
             longitude REAL,
+            pop REAL DEFAULT 0,
+            uvi REAL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(cityName, dataDate) ON CONFLICT REPLACE
         );
         """)
+        
+        # Migration: Add columns if table existed prior to update
+        for col in ["pop", "uvi"]:
+            try:
+                cursor.execute(f"ALTER TABLE TemperatureForecasts ADD COLUMN {col} REAL DEFAULT 0;")
+            except Exception:
+                pass
+            try:
+                cursor.execute(f"ALTER TABLE CityForecasts ADD COLUMN {col} REAL DEFAULT 0;")
+            except Exception:
+                pass
         
         conn.commit()
         conn.close()
@@ -80,14 +95,19 @@ def save_regional_forecasts(df_regional):
         
         for _, row in df_regional.iterrows():
             cursor.execute("""
-            INSERT INTO TemperatureForecasts (regionName, dataDate, mint, maxt, wx)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO TemperatureForecasts (regionName, dataDate, mint, maxt, wx, pop, uvi)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(regionName, dataDate) DO UPDATE SET
                 mint = excluded.mint,
                 maxt = excluded.maxt,
                 wx = excluded.wx,
+                pop = excluded.pop,
+                uvi = excluded.uvi,
                 created_at = CURRENT_TIMESTAMP
-            """, (row["regionName"], row["dataDate"], row["mint"], row["maxt"], row.get("wx", "")))
+            """, (
+                row["regionName"], row["dataDate"], row["mint"], row["maxt"],
+                row.get("wx", ""), float(row.get("pop", 0) or 0), float(row.get("uvi", 0) or 0)
+            ))
             
         conn.commit()
         conn.close()
@@ -103,8 +123,8 @@ def save_city_forecasts(df_city):
 
         for _, row in df_city.iterrows():
             cursor.execute("""
-            INSERT INTO CityForecasts (cityName, regionName, dataDate, mint, maxt, wx, latitude, longitude)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO CityForecasts (cityName, regionName, dataDate, mint, maxt, wx, latitude, longitude, pop, uvi)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(cityName, dataDate) DO UPDATE SET
                 regionName = excluded.regionName,
                 mint = excluded.mint,
@@ -112,11 +132,14 @@ def save_city_forecasts(df_city):
                 wx = excluded.wx,
                 latitude = excluded.latitude,
                 longitude = excluded.longitude,
+                pop = excluded.pop,
+                uvi = excluded.uvi,
                 created_at = CURRENT_TIMESTAMP
             """, (
                 row["cityName"], row["regionName"], row["dataDate"],
                 row["mint"], row["maxt"], row.get("wx", ""),
-                row.get("latitude", 0.0), row.get("longitude", 0.0)
+                row.get("latitude", 0.0), row.get("longitude", 0.0),
+                float(row.get("pop", 0) or 0), float(row.get("uvi", 0) or 0)
             ))
 
         conn.commit()

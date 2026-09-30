@@ -141,7 +141,7 @@ with tab1:
     if not df_view.empty:
         df_today = df_view[df_view["dataDate"] >= today_str]
         latest_row = df_today.iloc[0] if not df_today.empty else df_view.iloc[0]
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
         with col1:
             st.metric("🔥 最高氣溫 MaxT", f"{latest_row['maxt']} °C")
         with col2:
@@ -150,6 +150,10 @@ with tab1:
             avg_temp = round((latest_row['maxt'] + latest_row['mint']) / 2, 1)
             st.metric("🌡️ 平均氣溫 AvgT", f"{avg_temp} °C")
         with col4:
+            st.metric("🌧️ 降雨機率 PoP", f"{int(latest_row.get('pop', 0))} %")
+        with col5:
+            st.metric("☀️ 紫外線 UVI", f"{latest_row.get('uvi', 0.0)}")
+        with col6:
             st.metric("☁️ 天氣現象 Wx", f"{latest_row.get('wx', '多雲')}")
 
         st.divider()
@@ -182,15 +186,47 @@ with tab1:
             hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             template="plotly_white",
-            height=420
+            height=380
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown("### 📋 清楚呈現預報資料表格")
-        display_df = df_view[["dataDate", "mint", "maxt", "wx"]].rename(columns={
+        st.markdown("### 🌧️ 降雨機率 (PoP %) & ☀️ 紫外線指數 (UVI) 趨勢圖")
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(
+            x=df_view["dataDate"],
+            y=df_view["pop"],
+            name="降雨機率 (PoP %)",
+            marker_color="#29B6F6",
+            opacity=0.75
+        ))
+        fig2.add_trace(go.Scatter(
+            x=df_view["dataDate"],
+            y=df_view["uvi"],
+            name="紫外線指數 (UVI)",
+            mode="lines+markers",
+            line=dict(color="#FF9800", width=3),
+            marker=dict(size=8),
+            yaxis="y2"
+        ))
+        fig2.update_layout(
+            title="一週降雨機率與紫外線趨勢",
+            xaxis_title="日期 (Date)",
+            yaxis=dict(title="降雨機率 (%)", range=[0, 100]),
+            yaxis2=dict(title="紫外線指數 (UVI)", overlaying="y", side="right", range=[0, 15]),
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            template="plotly_white",
+            height=380
+        )
+        st.plotly_chart(fig2, use_container_width=True)
+
+        st.markdown("### 📋 氣象資料明細表格")
+        display_df = df_view[["dataDate", "mint", "maxt", "pop", "uvi", "wx"]].rename(columns={
             "dataDate": "日期 (Date)",
             "mint": "最低氣溫 (°C)",
             "maxt": "最高氣溫 (°C)",
+            "pop": "降雨機率 (%)",
+            "uvi": "紫外線指數 (UVI)",
             "wx": "天氣現象"
         })
         st.dataframe(display_df, use_container_width=True, hide_index=True)
@@ -242,11 +278,13 @@ with tab2:
                 bg_color = "#E53935" # Red
 
             popup_html = f"""
-            <div style="font-family: 'Inter', sans-serif; width: 170px; padding: 4px;">
+            <div style="font-family: 'Inter', sans-serif; width: 180px; padding: 4px;">
                 <h4 style="margin:0 0 6px 0; color:#1a73e8; border-bottom:1px solid #eee; padding-bottom:4px;">{row['cityName']}</h4>
                 <b>日期:</b> {row['dataDate']}<br>
                 <b>最高溫:</b> <span style="color:#d93025; font-weight:bold;">{row['maxt']}°C</span><br>
                 <b>最低溫:</b> <span style="color:#1a73e8; font-weight:bold;">{row['mint']}°C</span><br>
+                <b>🌧️ 降雨機率:</b> <span style="color:#0288d1; font-weight:bold;">{int(row.get('pop', 0))}%</span><br>
+                <b>☀️ 紫外線:</b> <span style="color:#e65100; font-weight:bold;">UVI {row.get('uvi', 0)}</span><br>
                 <b>天氣狀況:</b> {row.get('wx', '多雲')}
             </div>
             """
@@ -266,7 +304,7 @@ with tab2:
                 text-align: center;
                 font-family: 'Inter', sans-serif;
             ">
-                📍 {row['cityName']} | {row['mint']}~{row['maxt']}°C
+                📍 {row['cityName']} | {row['mint']}~{row['maxt']}°C | 🌧️{int(row.get('pop', 0))}%
             </div>
             """
 
@@ -274,11 +312,11 @@ with tab2:
                 location=[row["latitude"], row["longitude"]],
                 icon=folium.DivIcon(
                     html=icon_html,
-                    icon_size=(110, 32),
-                    icon_anchor=(55, 16)
+                    icon_size=(130, 32),
+                    icon_anchor=(65, 16)
                 ),
                 popup=folium.Popup(popup_html, max_width=220),
-                tooltip=f"{row['cityName']}: {row['mint']}°C ~ {row['maxt']}°C ({row.get('wx', '')})"
+                tooltip=f"{row['cityName']}: {row['mint']}~{row['maxt']}°C, 🌧️{int(row.get('pop', 0))}%, ☀️UVI {row.get('uvi', 0)} ({row.get('wx', '')})"
             ).add_to(m)
 
         st_folium(m, width="100%", height=550)
@@ -288,11 +326,19 @@ with tab3:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.info("🧥 **穿搭與防曬建議**")
-        st.markdown("""
-        - **高溫特報 (>30°C)**: 建議穿著透氣排汗衣物，外出請備妥遮陽帽與太陽眼鏡，並隨時補充水分。
-        - **舒適溫度 (20~25°C)**: 適合穿著薄長袖或短袖搭配薄外套，體感極為舒適。
-        - **涼爽低溫 (<20°C)**: 早晚溫差較大，建議攜帶風衣或保暖外套以免受涼。
+        st.info("🧥 **穿搭與防曬降雨建議**")
+        curr_pop = int(latest_row.get('pop', 0)) if not df_view.empty else 0
+        curr_uvi = float(latest_row.get('uvi', 0)) if not df_view.empty else 0
+        
+        rain_advice = "🌧️ **攜帶雨具提示**: 降雨機率高達 " + str(curr_pop) + "%！出門切記攜帶雨傘或雨衣。" if curr_pop >= 30 else "🌤️ **雨具提示**: 降雨機率低 (" + str(curr_pop) + "%)，適合戶外活動。"
+        uv_advice = "☀️ **紫外線警告 (UVI " + str(curr_uvi) + ")**: 紫外線過量/危險級！請務必塗抹防曬乳、戴遮陽帽與太陽眼鏡。" if curr_uvi >= 8 else ("🧴 **紫外線提醒 (UVI " + str(curr_uvi) + ")**: 紫外線中高度，戶外活動超過30分鐘請做好基本防曬。" if curr_uvi >= 3 else "😎 **紫外線適中 (UVI " + str(curr_uvi) + ")**: 紫外線指數較低。")
+        
+        st.markdown(f"""
+        - {rain_advice}
+        - {uv_advice}
+        - **高溫穿搭 (>30°C)**: 建議穿著透氣排汗衣物，外出請補充水分。
+        - **舒適穿搭 (20~25°C)**: 適合短袖搭配薄外套，體感極為舒適。
+        - **低溫保暖 (<20°C)**: 早晚溫差較大，建議攜帶保暖外套。
         """)
 
     with col2:
