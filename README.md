@@ -44,11 +44,12 @@ A full-stack, data-driven Taiwan Weather Forecast Web Dashboard integrating **Ce
 ## 🌟 Key Features
 
 - **🌐 CWA Open Data API Integration**: Real-time automated data fetching for 1-week forecasts (`F-D0047-091`) and 36-hour forecasts (`F-C0032-001`).
-- **🗺️ Google Maps GIS Integration**: Choice of Google Maps Standard Roadmap, Satellite Hybrid, and Terrain tiles with temperature pill badges.
-- **🗄️ SQLite Database Architecture (`data.db`)**: Dual-table relational storage for regional (`TemperatureForecasts`) and city-level (`CityForecasts`) weather metrics with `ON CONFLICT REPLACE` anti-duplication logic.
-- **📊 Interactive Temperature Trend Line Charts**: Plotly line charts displaying weekly Highest Temperature (`MaxT`) vs. Lowest Temperature (`MinT`).
+- **🌧️ PoP & ☀️ UVI Metrics**: Full integration of **Probability of Precipitation (PoP % / 降雨機率)** and **Ultraviolet Index (UVI / 紫外線指數)** metrics.
+- **🗺️ Google Maps GIS Integration**: Choice of Google Maps Standard Roadmap, Satellite Hybrid, and Terrain tiles with color-coded temperature, PoP, and UVI pill badges.
+- **🗄️ SQLite Database Architecture (`data.db`)**: Dual-table relational storage for regional (`TemperatureForecasts`) and city-level (`CityForecasts`) weather metrics with `ON CONFLICT REPLACE` anti-duplication logic and automatic record purging.
+- **📊 Interactive Temperature & Weather Trend Charts**: Plotly line charts displaying weekly Highest Temperature (`MaxT`) vs. Lowest Temperature (`MinT`), alongside dual-axis bar & line charts for PoP (%) and UVI index trends.
 - **📍 Multi-Level Regional & City Filters**: Instant filtering across **北部地區**, **中部地區**, **南部地區**, **東部地區**, and **離島地區** or specific cities/counties.
-- **💡 AI Weather Insights & Advice**: Contextual clothing, umbrella, travel, and agricultural weather advice.
+- **💡 AI Weather Insights & Advice**: Contextual clothing, umbrella, sunscreen, travel, and agricultural weather advice.
 
 ---
 
@@ -83,6 +84,8 @@ CREATE TABLE TemperatureForecasts (
     mint REAL NOT NULL,
     maxt REAL NOT NULL,
     wx TEXT,
+    pop REAL DEFAULT 0,
+    uvi REAL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(regionName, dataDate) ON CONFLICT REPLACE
 );
@@ -100,6 +103,8 @@ CREATE TABLE CityForecasts (
     wx TEXT,
     latitude REAL,
     longitude REAL,
+    pop REAL DEFAULT 0,
+    uvi REAL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(cityName, dataDate) ON CONFLICT REPLACE
 );
