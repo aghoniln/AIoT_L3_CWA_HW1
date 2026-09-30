@@ -6,7 +6,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Plotly](https://img.shields.io/badge/Plotly-7.1-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
 [![Folium](https://img.shields.io/badge/Folium-0.20-77B800?style=for-the-badge&logo=leaflet&logoColor=white)](https://python-visualization.github.io/folium/)
-[![Live Website](https://img.shields.io/badge/Live_Website-Online-success?style=for-the-badge&logo=cloudflare&logoColor=white)](https://scotia-guarantees-lang-campus.trycloudflare.com)
+[![Live Website](https://img.shields.io/badge/Live_Website-Online-success?style=for-the-badge&logo=cloudflare&logoColor=white)](https://periodic-rss-pot-sequences.trycloudflare.com)
 
 A full-stack, data-driven Taiwan Weather Forecast Web Dashboard integrating **Central Weather Administration (CWA) Open Data API**, **SQLite Database Caching (`data.db`)**, interactive **Plotly charts**, and color-coded **Google Maps / Folium interactive maps**.
 
@@ -14,7 +14,7 @@ A full-stack, data-driven Taiwan Weather Forecast Web Dashboard integrating **Ce
 
 ## 🌐 Live Web Application (即時線上儀表板)
 
-- **Live Website URL**: [https://scotia-guarantees-lang-campus.trycloudflare.com](https://scotia-guarantees-lang-campus.trycloudflare.com)
+- **Live Website URL**: [https://periodic-rss-pot-sequences.trycloudflare.com](https://periodic-rss-pot-sequences.trycloudflare.com)
 - **Localhost Development URL**: [http://localhost:8501](http://localhost:8501)
 - **Real-Time Data Sync**: Enabled ✅ (Cloudflare Tunnel & CWA Open Data API)
 
