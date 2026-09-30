@@ -63,6 +63,7 @@ st.sidebar.title("🎛️ 預報控制台")
 # Refresh Button
 if st.sidebar.button("🔄 重新向 CWA API 抓取資料"):
     with st.spinner("正在向中央氣象署 CWA API 獲取最新資料..."):
+        st.cache_data.clear()
         success = fetch_and_store_weather_data()
         if success:
             st.sidebar.success("資料更新成功！")
@@ -79,10 +80,20 @@ def load_data():
 
 df_regional, df_city = load_data()
 
+today_str = datetime.now().strftime("%Y-%m-%d")
+
+# Check if database lacks current data or is empty
+if df_regional.empty or df_city.empty or (not df_city.empty and df_city["dataDate"].max() < today_str):
+    with st.spinner("偵測到即時預報需更新，正在向 CWA API 獲取今日最新天氣..."):
+        fetch_and_store_weather_data()
+        st.cache_data.clear()
+        df_regional, df_city = load_data()
+
 if df_regional.empty and df_city.empty:
     st.warning("⚠️ 資料庫中尚無氣象資料。點擊左側「重新向 CWA API 抓取資料」即可初始化！")
     if st.button("🚀 立即初始化資料庫"):
         fetch_and_store_weather_data()
+        st.cache_data.clear()
         st.rerun()
     st.stop()
 
@@ -102,9 +113,10 @@ else:
 
 selected_city = st.sidebar.selectbox("🏙️ 選擇縣市 (Select City):", options=available_cities)
 
-# Date Filter for Map
+# Date Filter for Map (Default to Today)
 available_dates = sorted(list(df_city["dataDate"].unique())) if not df_city.empty else []
-selected_date = st.sidebar.selectbox("📅 選擇地圖日期 (Select Date):", options=available_dates, index=0 if available_dates else None)
+default_date_idx = available_dates.index(today_str) if today_str in available_dates else 0
+selected_date = st.sidebar.selectbox("📅 選擇地圖日期 (Select Date):", options=available_dates, index=default_date_idx if available_dates else 0)
 
 # Map Style Selector (Google Maps Options)
 map_style = st.sidebar.radio(
@@ -127,7 +139,8 @@ with tab1:
         df_view = df_regional.sort_values("dataDate")
 
     if not df_view.empty:
-        latest_row = df_view.iloc[0]
+        df_today = df_view[df_view["dataDate"] >= today_str]
+        latest_row = df_today.iloc[0] if not df_today.empty else df_view.iloc[0]
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("🔥 最高氣溫 MaxT", f"{latest_row['maxt']} °C")

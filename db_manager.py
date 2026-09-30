@@ -122,36 +122,77 @@ def save_city_forecasts(df_city):
         conn.commit()
         conn.close()
 
+def cleanup_outdated_forecasts():
+    """Delete forecasts with dataDate older than today's date."""
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    for path in [DB_PATH, DATA_DIR_DB_PATH]:
+        if os.path.exists(path):
+            conn = get_connection(path)
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM TemperatureForecasts WHERE dataDate < ?", (today_str,))
+            cursor.execute("DELETE FROM CityForecasts WHERE dataDate < ?", (today_str,))
+            conn.commit()
+            conn.close()
+
 def get_distinct_regions():
     """Get list of distinct regions (Poster Step 10)."""
+    today_str = datetime.now().strftime("%Y-%m-%d")
     conn = get_connection()
-    df = pd.read_sql_query("SELECT DISTINCT regionName FROM TemperatureForecasts ORDER BY regionName", conn)
+    df = pd.read_sql_query("SELECT DISTINCT regionName FROM TemperatureForecasts WHERE dataDate >= ? ORDER BY regionName", conn, params=(today_str,))
     conn.close()
     return df["regionName"].tolist() if not df.empty else []
 
-def query_regional_forecasts(region_name=None):
+def query_regional_forecasts(region_name=None, include_past=False):
     """Query regional temperature forecasts from TemperatureForecasts (Poster Step 10 & 12)."""
     conn = get_connection()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    date_filter = "" if include_past else "WHERE dataDate >= ?"
+    params = () if include_past else (today_str,)
+
     if region_name and region_name != "全區" and region_name != "全部地區":
-        sql = "SELECT * FROM TemperatureForecasts WHERE regionName = ? ORDER BY dataDate"
-        df = pd.read_sql_query(sql, conn, params=(region_name,))
+        if include_past:
+            sql = "SELECT * FROM TemperatureForecasts WHERE regionName = ? ORDER BY dataDate"
+            params = (region_name,)
+        else:
+            sql = "SELECT * FROM TemperatureForecasts WHERE regionName = ? AND dataDate >= ? ORDER BY dataDate"
+            params = (region_name, today_str)
     else:
-        sql = "SELECT * FROM TemperatureForecasts ORDER BY regionName, dataDate"
-        df = pd.read_sql_query(sql, conn)
+        if include_past:
+            sql = "SELECT * FROM TemperatureForecasts ORDER BY regionName, dataDate"
+        else:
+            sql = "SELECT * FROM TemperatureForecasts WHERE dataDate >= ? ORDER BY regionName, dataDate"
+    df = pd.read_sql_query(sql, conn, params=params)
     conn.close()
     return df
 
-def query_city_forecasts(city_name=None, region_name=None):
+def query_city_forecasts(city_name=None, region_name=None, include_past=False):
     """Query city level temperature forecasts."""
     conn = get_connection()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
     if city_name:
-        sql = "SELECT * FROM CityForecasts WHERE cityName = ? ORDER BY dataDate"
-        df = pd.read_sql_query(sql, conn, params=(city_name,))
+        if include_past:
+            sql = "SELECT * FROM CityForecasts WHERE cityName = ? ORDER BY dataDate"
+            params = (city_name,)
+        else:
+            sql = "SELECT * FROM CityForecasts WHERE cityName = ? AND dataDate >= ? ORDER BY dataDate"
+            params = (city_name, today_str)
     elif region_name and region_name != "全區" and region_name != "全部地區":
-        sql = "SELECT * FROM CityForecasts WHERE regionName = ? ORDER BY cityName, dataDate"
-        df = pd.read_sql_query(sql, conn, params=(region_name,))
+        if include_past:
+            sql = "SELECT * FROM CityForecasts WHERE regionName = ? ORDER BY cityName, dataDate"
+            params = (region_name,)
+        else:
+            sql = "SELECT * FROM CityForecasts WHERE regionName = ? AND dataDate >= ? ORDER BY cityName, dataDate"
+            params = (region_name, today_str)
     else:
-        sql = "SELECT * FROM CityForecasts ORDER BY cityName, dataDate"
-        df = pd.read_sql_query(sql, conn)
+        if include_past:
+            sql = "SELECT * FROM CityForecasts ORDER BY cityName, dataDate"
+            params = ()
+        else:
+            sql = "SELECT * FROM CityForecasts WHERE dataDate >= ? ORDER BY cityName, dataDate"
+            params = (today_str,)
+            
+    df = pd.read_sql_query(sql, conn, params=params)
     conn.close()
     return df
+

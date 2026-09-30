@@ -4,9 +4,10 @@ import urllib3
 import pandas as pd
 from datetime import datetime
 from config import CWA_API_KEY, CWA_DATASET_ID, CWA_36H_DATASET_ID, COUNTY_TO_REGION, CITY_COORDINATES
-from db_manager import init_db, save_city_forecasts, save_regional_forecasts
+from db_manager import init_db, save_city_forecasts, save_regional_forecasts, cleanup_outdated_forecasts
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def fetch_cwa_dataset(dataset_id=CWA_DATASET_ID):
     """Fetch raw JSON dataset from CWA Open Data API."""
@@ -178,6 +179,8 @@ def fetch_and_store_weather_data():
         df_city, df_regional = parse_f_c0032_001(raw_data_36h)
 
     if not df_city.empty:
+        print("Cleaning up outdated past forecasts...")
+        cleanup_outdated_forecasts()
         print(f"Saving {len(df_city)} city records and {len(df_regional)} regional records to SQLite...")
         save_city_forecasts(df_city)
         save_regional_forecasts(df_regional)
