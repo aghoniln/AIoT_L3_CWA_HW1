@@ -1,3 +1,13 @@
+# HW2｜Multiple Linear Regression
+
+[公開免登入網站](https://hw2-regression-lab-aghoniln.freshplum4098.chatgpt.site/) · [完整 HW2 程式與說明](HW2/README.md) · [實驗報告](HW2/reports/RESULTS.md)
+
+HW2 提供洪水與汽車價格預測、自訂 CSV／網址、Group RFE、五折交叉驗證、模型評估及 95% 信賴／預測區間。從 HW2/ 目錄執行 `python -m streamlit run app.py`。
+
+原 HW1 專案保留於根目錄；以下為原 HW1 說明。
+
+---
+
 # 🌤️ AIoT L3 CWA Weather Forecast Web Application (中央氣象署天氣預報儀表板)
 
 [![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
