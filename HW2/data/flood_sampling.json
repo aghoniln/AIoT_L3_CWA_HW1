@@ -1,0 +1,8 @@
+{
+  "upstream_archive_member": "train.csv",
+  "upstream_rows": 1117957,
+  "sample_rows": 50000,
+  "sampling": "pandas.DataFrame.sample(n=50000, random_state=42), sort_values(id)",
+  "sample_sha256": "e897ac495db867eaef12bb15697a4d0eae41581ec08523926e5d8b26afbb31e9",
+  "source": "https://www.kaggle.com/datasets/naiyakhalid/flood-prediction-dataset"
+}
