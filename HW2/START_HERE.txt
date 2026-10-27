@@ -1,0 +1,16 @@
+﻿HW2 多元線性回歸
+
+1. 線上版：https://hw2-regression-lab-aghoniln.freshplum4098.chatgpt.site
+   已公開，無需登入 ChatGPT，可直接提供給老師。
+
+2. Windows 本機：在本資料夾開啟 PowerShell，執行
+   py -3.12 -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   .\.venv\Scripts\python.exe -m streamlit run app.py
+
+3. 報告：reports/RESULTS.md
+   互動圖：reports/flood/prediction_interval.html 與 reports/cars/prediction_interval.html
+
+4. GitHub：本專案放在 hw2-multiple-linear-regression 分支的 HW2/ 資料夾。
+
+5. 請補實際 NotebookLM 100 字以上摘要，並將完整聊天紀錄匯出 PDF。
